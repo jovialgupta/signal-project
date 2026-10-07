@@ -10,6 +10,7 @@ def delta_encode(signal, step_size=0.1):
     previous = signal[0]
 
     reconstructed.append(previous)
+
     for current in signal[1:]:
         if current >= previous:
             bits.append(1)
@@ -17,5 +18,7 @@ def delta_encode(signal, step_size=0.1):
         else:
             bits.append(0)
             previous = previous - step_size
-            reconstructed.append(previous)
-            return bits, np.array(reconstructed)
+
+        reconstructed.append(previous)
+
+    return bits, np.array(reconstructed)
