@@ -12,3 +12,9 @@ def pcm_decode(bitstream, bits_per_sample, min_value, max_value):
     for group in groups
     if len(group) == bits_per_sample
 ]
+    reconstructed = (
+    np.array(indices) / (levels - 1)
+) * (max_value - min_value) + min_value
+
+
+    return reconstructed
