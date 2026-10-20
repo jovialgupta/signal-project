@@ -3,47 +3,45 @@ import random
 
 
 def generate_random_bits(length=16):
-    """Generate a completely random binary string."""
+    """Generate a random binary sequence."""
     if length <= 0:
-        raise ValueError("Length must be positive")
+        raise ValueError("Length must be positive.")
 
     return "".join(random.choice("01") for _ in range(length))
 
 
 def generate_bits_with_zero_run(length=16, zero_count=8):
-    """Generate random bits containing at least the requested zero run."""
+    """Generate a binary sequence containing 4 or 8 consecutive zeros."""
     if length <= 0:
-        raise ValueError("Length must be positive")
+        raise ValueError("Length must be positive.")
 
-    if zero_count <= 0 or zero_count > length:
-        raise ValueError("zero_count must be between 1 and length")
+    if zero_count not in (4, 8):
+        raise ValueError("zero_count must be 4 or 8.")
 
-    # Reserve a position for the required consecutive zeros.
-    start = random.randint(0, length - zero_count)
+    if length < zero_count:
+        raise ValueError("Length must be at least zero_count.")
 
     bits = [
         random.choice("01")
         for _ in range(length)
     ]
 
+    start = random.randint(0, length - zero_count)
     bits[start:start + zero_count] = ["0"] * zero_count
 
     return "".join(bits)
 
 
 def longest_palindrome(bits):
-    """Return the longest contiguous palindromic substring."""
-
+    """Find the longest palindromic substring using Manacher's algorithm."""
     if not bits:
         return ""
 
-    # Manacher's algorithm: O(n) time.
     transformed = "^#" + "#".join(bits) + "#$"
     radius = [0] * len(transformed)
 
     center = 0
     right = 0
-
     best_center = 0
     best_length = 0
 
@@ -68,55 +66,45 @@ def longest_palindrome(bits):
             best_center = i
 
     start = (best_center - best_length) // 2
-
     return bits[start:start + best_length]
 
 
 def generate_data(mode="random", length=16, zero_count=8):
-    """Generate bits and return them with their longest palindrome."""
-
+    """Generate data and return it with its longest palindrome."""
     if mode == "random":
         bits = generate_random_bits(length)
-
     elif mode == "zeros":
         bits = generate_bits_with_zero_run(length, zero_count)
-
     else:
-        raise ValueError("Mode must be 'random' or 'zeros'")
+        raise ValueError("Mode must be 'random' or 'zeros'.")
 
-    palindrome = longest_palindrome(bits)
-
-    return bits, palindrome
+    return bits, longest_palindrome(bits)
 
 
 if __name__ == "__main__":
-    print("1. Random binary data")
-    print("2. Data containing consecutive zeros")
+    print("\n--- Digital Data Generator ---")
+    print("1. Random binary sequence")
+    print("2. Sequence containing four consecutive zeros")
+    print("3. Sequence containing eight consecutive zeros")
 
-    choice = input("Choose a mode: ").strip()
+    choice = input("Choose (1-3): ").strip()
 
     try:
-        length = int(input("Enter sequence length (default 16): ") or "16")
+        length = int(input("Sequence length (default 16): ") or "16")
 
         if choice == "1":
             bits, palindrome = generate_data("random", length)
-
-        elif choice == "2":
-            zero_count = int(
-                input("Consecutive zeros (4 or 8): ").strip()
-            )
-
-            if zero_count not in (4, 8):
-                raise ValueError("Choose either 4 or 8 zeros")
-
+        elif choice in ("2", "3"):
+            zero_count = 4 if choice == "2" else 8
             bits, palindrome = generate_data(
-                "zeros", length, zero_count
+                "zeros",
+                length,
+                zero_count,
             )
-
         else:
-            raise ValueError("Choose option 1 or 2")
+            raise ValueError("Choose 1, 2, or 3.")
 
-        print("Generated bits:", bits)
+        print("\nGenerated bits:", bits)
         print("Longest palindrome:", palindrome)
         print("Palindrome length:", len(palindrome))
 
