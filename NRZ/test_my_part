@@ -3,7 +3,6 @@ from palindrome import longest_palindrome
 from line_encoding import nrz_l_encode, nrz_l_decode
 from line_encoding import nrz_i_encode, nrz_i_decode
 
-
 # Generate random digital data
 data = generate_random_data(20)
 
