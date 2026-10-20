@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 
 def plot_digital_signal(signal, title="Digital Signal"):
-    """Plot an encoded digital signal as a step waveform."""
+    """Plot encoded digital signal levels."""
     signal = np.asarray(signal)
 
     plt.figure(figsize=(10, 4))
@@ -12,6 +12,7 @@ def plot_digital_signal(signal, title="Digital Signal"):
         np.arange(len(signal)),
         signal,
         where="post",
+        linewidth=1.8,
     )
     plt.title(title)
     plt.xlabel("Bit / sample position")
@@ -22,11 +23,17 @@ def plot_digital_signal(signal, title="Digital Signal"):
 
 
 def plot_analog_signal(time, signal, title="Analog Signal"):
-    """Plot an analog signal."""
+    """Plot an analog input signal."""
+    time = np.asarray(time)
+    signal = np.asarray(signal)
+
+    if len(time) != len(signal):
+        raise ValueError("Time and signal must have the same length.")
+
     plt.figure(figsize=(10, 4))
-    plt.plot(time, signal, marker=".")
+    plt.plot(time, signal, marker="o", linewidth=1.5)
     plt.title(title)
-    plt.xlabel("Time")
+    plt.xlabel("Time / sample position")
     plt.ylabel("Amplitude")
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
@@ -34,26 +41,23 @@ def plot_analog_signal(time, signal, title="Analog Signal"):
 
 
 def plot_comparison(original, reconstructed, title="Signal Comparison"):
-    """Compare original and reconstructed signals on the same graph."""
+    """Compare an original signal with its reconstruction."""
     original = np.asarray(original)
     reconstructed = np.asarray(reconstructed)
 
     plt.figure(figsize=(10, 4))
-
     plt.plot(
         np.arange(len(original)),
         original,
         marker="o",
-        label="Original",
+        label="Original signal",
     )
-
     plt.step(
         np.arange(len(reconstructed)),
         reconstructed,
         where="mid",
-        label="Reconstructed",
+        label="Reconstructed signal",
     )
-
     plt.title(title)
     plt.xlabel("Sample position")
     plt.ylabel("Amplitude")
