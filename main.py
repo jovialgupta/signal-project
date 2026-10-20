@@ -1,6 +1,8 @@
 
 import numpy as np
 
+from data_generator import generate_data, longest_palindrome
+
 from encoders.nrz.nrz_l import nrz_l_encode
 from encoders.nrz.nrz_i import nrz_i_encode
 from encoders.manchester.manchester import manchester_encode
@@ -17,205 +19,331 @@ from decoders.manchester_decoder import (
     differential_manchester_decode,
 )
 from decoders.ami_decoder import ami_decode
-
-from analog.pcm import pcm_encode
 from decoders.pcm_decoder import pcm_decode
-
-from analog.dm import dm_encode
 from decoders.delta_decoder import dm_decode
 
+from analog.pcm import pcm_encode
+from analog.dm import dm_encode
 
-def plot_signal(signal, title):
-    """Plot a digital or reconstructed signal."""
-    try:
-        import matplotlib.pyplot as plt
+from plotting import (
+    plot_digital_signal,
+    plot_analog_signal,
+    plot_comparison,
+)
 
-        plt.figure(figsize=(9, 4))
-        plt.step(range(len(signal)), signal, where="mid")
-        plt.title(title)
-        plt.xlabel("Sample / bit position")
-        plt.ylabel("Amplitude")
-        plt.grid(True)
-        plt.tight_layout()
-        plt.show()
 
-    except ImportError:
-        print("Matplotlib is not installed.")
-        print("Install it using: python -m pip install matplotlib")
+def get_choice(prompt, valid_choices):
+    """Keep asking until the user enters a valid choice."""
+    while True:
+        choice = input(prompt).strip().lower()
+        if choice in valid_choices:
+            return choice
+        print("Invalid choice. Try again.")
+
+
+def get_integer(prompt, default, minimum=1):
+    while True:
+        raw = input(f"{prompt} (default {default}): ").strip()
+        try:
+            value = int(raw) if raw else default
+            if value >= minimum:
+                return value
+            print(f"Enter a value >= {minimum}.")
+        except ValueError:
+            print("Enter a valid integer.")
+
+
+def get_float(prompt, default):
+    while True:
+        raw = input(f"{prompt} (default {default}): ").strip()
+        try:
+            value = float(raw) if raw else default
+            if np.isfinite(value):
+                return value
+            print("Enter a finite number.")
+        except ValueError:
+            print("Enter a valid number.")
 
 
 def get_bits():
-    bits = input("Enter binary bits (e.g. 10110): ").strip()
+    while True:
+        bits = input("Enter binary bits: ").strip()
+        if bits and all(bit in "01" for bit in bits):
+            return bits
+        print("Enter a non-empty sequence containing only 0 and 1.")
 
-    if not bits or any(bit not in "01" for bit in bits):
-        print("Error: Enter only 0 and 1.")
-        return None
+
+def get_samples():
+    while True:
+        raw = input(
+            "Enter sample values separated by spaces "
+            "(e.g. -1 0 0.5 1): "
+        ).strip()
+
+        try:
+            samples = np.array(
+                [float(value) for value in raw.split()],
+                dtype=float,
+            )
+            if samples.size and np.all(np.isfinite(samples)):
+                return samples
+            print("Enter at least one finite numerical sample.")
+        except ValueError:
+            print("Samples must be numbers.")
+
+
+def choose_digital_data():
+    print("\n--- Digital Data Generator ---")
+    print("1. Generate random bits")
+    print("2. Generate bits containing 4 consecutive zeros")
+    print("3. Generate bits containing 8 consecutive zeros")
+    print("4. Enter bits manually")
+
+    choice = get_choice("Choose (1-4): ", {"1", "2", "3", "4"})
+
+    if choice == "4":
+        bits = get_bits()
+    else:
+        length = get_integer("Sequence length", 16)
+
+        if choice == "1":
+            bits, _ = generate_data("random", length)
+        else:
+            zero_count = 4 if choice == "2" else 8
+
+            if length < zero_count:
+                print(
+                    f"Length must be at least {zero_count}. "
+                    "Using manual input instead."
+                )
+                bits = get_bits()
+            else:
+                bits, _ = generate_data(
+                    "zeros",
+                    length,
+                    zero_count,
+                )
+
+    palindrome = longest_palindrome(bits)
+
+    print("\nGenerated digital data:", bits)
+    print("Longest palindrome:", palindrome)
+    print("Palindrome length:", len(palindrome))
 
     return bits
 
 
-def get_samples():
-    raw = input(
-        "Enter sample values separated by spaces (e.g. -1 0 1): "
-    ).strip()
+def choose_line_encoder():
+    print("\n--- Line Coding ---")
+    print("1. NRZ-L")
+    print("2. NRZ-I")
+    print("3. Manchester")
+    print("4. Differential Manchester")
+    print("5. AMI")
+    print("6. B8ZS")
+    print("7. HDB3")
+
+    choice = get_choice("Choose encoder (1-7): ", set("1234567"))
+
+    encoders = {
+        "1": ("NRZ-L", nrz_l_encode, nrz_l_decode),
+        "2": ("NRZ-I", nrz_i_encode, nrz_i_decode),
+        "3": ("Manchester", manchester_encode, manchester_decode),
+        "4": (
+            "Differential Manchester",
+            differential_manchester_encode,
+            differential_manchester_decode,
+        ),
+        "5": ("AMI", ami_encode, ami_decode),
+        "6": ("B8ZS", b8zs_encode, None),
+        "7": ("HDB3", hdb3_encode, None),
+    }
+
+    name, encoder, decoder = encoders[choice]
+    return name, encoder, decoder
+
+
+def run_line_coding(bits):
+    name, encoder, decoder = choose_line_encoder()
+
+    encoded = encoder(bits)
+
+    print(f"\n{name} encoded signal:")
+    print(encoded)
 
     try:
-        samples = [float(value) for value in raw.split()]
+        plot_digital_signal(encoded, f"{name} Encoded Signal")
+    except (TypeError, ValueError) as error:
+        print("Could not plot encoded signal:", error)
 
-        if not samples:
-            print("Error: Enter at least one sample.")
-            return None
+    if name == "AMI":
+        scramble = get_choice(
+            "Apply scrambling? (y/n): ",
+            {"y", "n"},
+        )
 
-        if not np.all(np.isfinite(samples)):
-            print("Error: Samples must be finite numbers.")
-            return None
+        if scramble == "y":
+            scheme = get_choice(
+                "Choose scrambling: 1. B8ZS  2. HDB3: ",
+                {"1", "2"},
+            )
 
-        return samples
+            if scheme == "1":
+                encoded = b8zs_encode(bits)
+                name = "B8ZS"
+            else:
+                encoded = hdb3_encode(bits)
+                name = "HDB3"
 
-    except ValueError:
-        print("Error: Samples must be numbers.")
-        return None
+            print(f"\n{name} encoded signal:")
+            print(encoded)
+            plot_digital_signal(encoded, f"{name} Scrambled Signal")
+
+            print(
+                "Decoding for B8ZS/HDB3 is not available "
+                "in the current decoder modules."
+            )
+            return
+
+    decode = get_choice("Decode the encoded signal? (y/n): ", {"y", "n"})
+
+    if decode == "y":
+        if decoder is None:
+            print(
+                f"No decoder is currently connected for {name}. "
+                "The encoded signal is still available above."
+            )
+        else:
+            try:
+                decoded = decoder(encoded)
+                print("Decoded bits:", decoded)
+                print("Original bits:", bits)
+                print("Match:", str(decoded) == bits)
+            except (TypeError, ValueError, IndexError) as error:
+                print("Decoding error:", error)
+
+
+def run_pcm():
+    print("\n--- Pulse Code Modulation (PCM) ---")
+    samples = get_samples()
+    bits_per_sample = get_integer("Bits per sample", 3)
+
+    bitstream, minimum, maximum = pcm_encode(
+        samples,
+        bits_per_sample=bits_per_sample,
+    )
+
+    print("\nPCM bitstream:", bitstream)
+
+    plot_analog_signal(
+        np.arange(len(samples)),
+        samples,
+        "Original PCM Samples",
+    )
+
+    decode = get_choice("Decode the PCM bitstream? (y/n): ", {"y", "n"})
+
+    if decode == "y":
+        reconstructed = pcm_decode(
+            bitstream,
+            bits_per_sample,
+            minimum,
+            maximum,
+        )
+
+        print("Reconstructed PCM samples:", reconstructed)
+
+        plot_comparison(
+            samples,
+            reconstructed,
+            "Original vs Reconstructed PCM",
+        )
+
+    if get_choice(
+        "Pass PCM bits to line coding? (y/n): ",
+        {"y", "n"},
+    ) == "y":
+        run_line_coding(bitstream)
+
+
+def run_dm():
+    print("\n--- Delta Modulation (DM) ---")
+    samples = get_samples()
+    step_size = get_float("Step size", 0.1)
+
+    if step_size <= 0:
+        print("Step size must be positive.")
+        return
+
+    bitstream, encoder_staircase = dm_encode(
+        samples,
+        step_size=step_size,
+    )
+
+    print("\nDelta Modulation bitstream:", bitstream)
+    print("Encoder staircase:", encoder_staircase)
+
+    plot_comparison(
+        samples,
+        encoder_staircase,
+        "Original Signal vs DM Encoder Staircase",
+    )
+
+    decode = get_choice("Decode the DM bitstream? (y/n): ", {"y", "n"})
+
+    if decode == "y":
+        reconstructed = dm_decode(
+            bitstream,
+            step_size=step_size,
+            initial_value=float(samples[0]),
+        )
+
+        print("Decoded staircase:", reconstructed)
+
+        plot_comparison(
+            encoder_staircase,
+            reconstructed,
+            "Encoder Staircase vs Decoded Staircase",
+        )
+
+    if bitstream and get_choice(
+        "Pass DM bits to line coding? (y/n): ",
+        {"y", "n"},
+    ) == "y":
+        run_line_coding(bitstream)
+    elif not bitstream:
+        print("No DM bits were generated; skipping line coding.")
 
 
 def main():
     while True:
-        print("\n====================================")
+        print("\n======================================")
         print(" DIGITAL SIGNAL ENCODER / DECODER")
-        print("====================================")
-        print("1. NRZ-L")
-        print("2. NRZ-I")
-        print("3. Manchester")
-        print("4. Differential Manchester")
-        print("5. AMI")
-        print("6. B8ZS")
-        print("7. HDB3")
-        print("8. PCM")
-        print("9. Delta Modulation")
+        print("======================================")
+        print("1. Digital input and line coding")
+        print("2. Analog input and PCM")
+        print("3. Analog input and Delta Modulation")
         print("0. Exit")
 
-        choice = input("Choose an option (0-9): ").strip()
+        choice = get_choice("Choose an option (0-3): ", {"0", "1", "2", "3"})
 
         if choice == "0":
             print("Program closed. Goodbye!")
             break
 
         try:
-            # LINE CODING
-            if choice in ("1", "2", "3", "4", "5", "6", "7"):
-                bits = get_bits()
+            if choice == "1":
+                bits = choose_digital_data()
+                run_line_coding(bits)
+            elif choice == "2":
+                run_pcm()
+            elif choice == "3":
+                run_dm()
 
-                if bits is None:
-                    continue
-
-                if choice == "1":
-                    signal = nrz_l_encode(bits)
-                    print("NRZ-L encoded:", signal)
-                    print("Decoded bits:", nrz_l_decode(signal))
-                    plot_signal(signal, "NRZ-L")
-
-                elif choice == "2":
-                    signal = nrz_i_encode(bits)
-                    print("NRZ-I encoded:", signal)
-                    print("Decoded bits:", nrz_i_decode(signal))
-                    plot_signal(signal, "NRZ-I")
-
-                elif choice == "3":
-                    signal = manchester_encode(bits)
-                    print("Manchester encoded:", signal)
-                    print("Decoded bits:", manchester_decode(signal))
-                    plot_signal(signal, "Manchester")
-
-                elif choice == "4":
-                    signal = differential_manchester_encode(bits)
-                    print("Differential Manchester encoded:", signal)
-                    print(
-                        "Decoded bits:",
-                        differential_manchester_decode(signal),
-                    )
-                    plot_signal(signal, "Differential Manchester")
-
-                elif choice == "5":
-                    signal = ami_encode(bits)
-                    print("AMI encoded:", signal)
-                    print("Decoded bits:", ami_decode(signal))
-                    plot_signal(signal, "AMI")
-
-                elif choice == "6":
-                    signal = b8zs_encode(bits)
-                    print("B8ZS encoded:", signal)
-                    plot_signal(signal, "B8ZS")
-
-                elif choice == "7":
-                    signal = hdb3_encode(bits)
-                    print("HDB3 encoded:", signal)
-                    plot_signal(signal, "HDB3")
-
-            # PCM ENCODING AND DECODING
-            elif choice == "8":
-                samples = get_samples()
-
-                if samples is None:
-                    continue
-
-                bits_per_sample = int(
-                    input("Bits per sample (default 3): ") or "3"
-                )
-
-                bitstream, minimum, maximum = pcm_encode(
-                    samples,
-                    bits_per_sample=bits_per_sample,
-                )
-
-                decoded = pcm_decode(
-                    bitstream,
-                    bits_per_sample,
-                    minimum,
-                    maximum,
-                )
-
-                print("PCM bitstream:", bitstream)
-                print("Decoded samples:", decoded)
-
-                plot_signal(samples, "Original PCM Samples")
-                plot_signal(decoded, "Reconstructed PCM Samples")
-
-            # DELTA MODULATION ENCODING AND DECODING
-            elif choice == "9":
-                samples = get_samples()
-
-                if samples is None:
-                    continue
-
-                step_size = float(
-                    input("Step size (default 0.1): ") or "0.1"
-                )
-
-                bitstream, encoder_staircase = dm_encode(
-                    samples,
-                    step_size=step_size,
-                )
-
-                decoded = dm_decode(
-                    bitstream,
-                    step_size=step_size,
-                    initial_value=samples[0],
-                )
-
-                print("Delta Modulation bitstream:", bitstream)
-                print("Encoder staircase:", encoder_staircase)
-                print("Decoded staircase:", decoded)
-
-                plot_signal(samples, "Original Delta Modulation Samples")
-                plot_signal(decoded, "Reconstructed Delta Modulation Signal")
-
-            else:
-                print("Invalid choice. Enter a number from 0 to 9.")
-
-        except (ValueError, TypeError) as error:
-            print("Input or encoding error:", error)
-
+        except (ValueError, TypeError, IndexError) as error:
+            print("\nInput or processing error:", error)
         except Exception as error:
-            print("Unexpected error:", error)
+            print("\nUnexpected error:", error)
 
 
 if __name__ == "__main__":
