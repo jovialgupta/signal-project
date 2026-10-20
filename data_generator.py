@@ -1,6 +1,5 @@
 import random
 
-
 def generate_random_data(length):
     if length <= 0:
         raise ValueError("Length must be greater than 0")
