@@ -22,40 +22,12 @@ def pcm_encode(signal, bits_per_sample=3):
     else:
         normalized = (samples - min_value) / (max_value - min_value)
         indices = np.round(normalized * (levels - 1)).astype(int)
+    if max_value == min_value:
+        quantized_values = np.full(len(samples), min_value)
+    else:
+        quantized_values = (
+            indices / (levels - 1)
+        ) * (max_value - min_value) + min_value
 
-    bitstream = "".join(
-        format(int(index), f"0{bits_per_sample}b")
-        for index in indices
-    )
-
-    # Keep the range so the decoder can reconstruct approximate samples.
-    return bitstream, min_value, max_value
-
-
-def pcm_decode(bitstream, min_value, max_value, bits_per_sample=3):
-    """Decode a PCM bitstream into approximate sample values."""
-    if bits_per_sample < 1:
-        raise ValueError("bits_per_sample must be at least 1")
-    if len(bitstream) % bits_per_sample != 0:
-        raise ValueError("Bitstream length must be divisible by bits_per_sample")
-    if any(bit not in "01" for bit in bitstream):
-        raise ValueError("Bitstream must contain only 0 and 1")
-    if max_value < min_value:
-        raise ValueError("max_value must be >= min_value")
-
-    levels = 2 ** bits_per_sample
-    samples = []
-
-    for i in range(0, len(bitstream), bits_per_sample):
-        index = int(bitstream[i:i + bits_per_sample], 2)
-
-        if min_value == max_value:
-            sample = min_value
-        else:
-            sample = min_value + (
-                index / (levels - 1)
-            ) * (max_value - min_value)
-
-        samples.append(sample)
-
-    return np.asarray(samples)
+    return samples, quantized_values
+        
