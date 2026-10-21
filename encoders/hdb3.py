@@ -1,6 +1,7 @@
 
 def hdb3_encode(bits):
-    if any(bit not in '01' for bit in bits):
+    """Encode binary data using AMI with HDB3 zero substitution."""
+    if any(bit not in "01" for bit in bits):
         raise ValueError("Bits must contain only 0 and 1")
 
     signal = []
@@ -9,14 +10,16 @@ def hdb3_encode(bits):
     i = 0
 
     while i < len(bits):
-        if bits[i:i + 4] == '0000':
+        if bits[i:i + 4] == "0000":
             if pulse_count % 2 == 1:
-                # Odd number of pulses: 000V
+                # Odd number of normal pulses: 000V
+                # V has the same polarity as the preceding pulse.
                 violation = last_level
                 signal.extend([0, 0, 0, violation])
                 last_level = violation
             else:
-                # Even number of pulses: B00V
+                # Even number of normal pulses: B00V
+                # B alternates normally; V violates AMI polarity.
                 balancing = -last_level
                 violation = balancing
                 signal.extend([balancing, 0, 0, violation])
@@ -25,7 +28,7 @@ def hdb3_encode(bits):
             pulse_count = 0
             i += 4
 
-        elif bits[i] == '0':
+        elif bits[i] == "0":
             signal.append(0)
             i += 1
 
