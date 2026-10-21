@@ -1,14 +1,21 @@
+
 import numpy as np
 
 
 def pcm_encode(signal, bits_per_sample=3):
-    signal = np.asarray(signal, dtype=float)
-    samples = signal.copy()
+    """Quantize samples and encode them as a binary bitstream."""
+    samples = np.asarray(signal, dtype=float)
+
+    if samples.size == 0:
+        raise ValueError("Signal cannot be empty")
+    if bits_per_sample < 1:
+        raise ValueError("bits_per_sample must be at least 1")
+    if not np.all(np.isfinite(samples)):
+        raise ValueError("Signal must contain finite numbers")
 
     levels = 2 ** bits_per_sample
-
-    min_value = np.min(samples)
-    max_value = np.max(samples)
+    min_value = float(np.min(samples))
+    max_value = float(np.max(samples))
 
     if max_value == min_value:
         indices = np.zeros(len(samples), dtype=int)
