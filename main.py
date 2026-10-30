@@ -151,8 +151,8 @@ def choose_line_encoder():
             differential_manchester_decode,
         ),
         "5": ("AMI", ami_encode, ami_decode),
-        "6": ("B8ZS", b8zs_encode,b8zs_decoder),
-        "7": ("HDB3", hdb3_encode,hdb3_decoder ),
+        "6": ("B8ZS", b8zs_encode,b8zs_decode),
+        "7": ("HDB3", hdb3_encode,hdb3_decode ),
     }
 
     return encoders[choice]
