@@ -32,42 +32,59 @@ def generate_bits_with_zero_run(length=16, zero_count=8):
     return "".join(bits)
 
 
+
 def longest_palindrome(bits):
-    """Find the longest palindromic substring using Manacher's algorithm."""
-    if not bits:
+    n = len(bits)
+
+    if n == 0:
         return ""
 
-    transformed = "^#" + "#".join(bits) + "#$"
-    radius = [0] * len(transformed)
+    # dp[i][j] = length of the longest palindromic
+    # subsequence in bits[i:j+1]
+    dp = [[0] * n for _ in range(n)]
 
-    center = 0
-    right = 0
-    best_center = 0
-    best_length = 0
+    # A single character is always a palindrome
+    for i in range(n):
+        dp[i][i] = 1
 
-    for i in range(1, len(transformed) - 1):
-        mirror = 2 * center - i
+    # Consider substrings of increasing length
+    for length in range(2, n + 1):
+        for i in range(n - length + 1):
+            j = i + length - 1
 
-        if i < right:
-            radius[i] = min(right - i, radius[mirror])
+            if bits[i] == bits[j]:
+                if length == 2:
+                    dp[i][j] = 2
+                else:
+                    dp[i][j] = dp[i + 1][j - 1] + 2
+            else:
+                dp[i][j] = max(
+                    dp[i + 1][j],
+                    dp[i][j - 1]
+                )
 
-        while (
-            transformed[i + 1 + radius[i]]
-            == transformed[i - 1 - radius[i]]
-        ):
-            radius[i] += 1
+    # Reconstruct the actual palindrome
+    left = 0
+    right = n - 1
+    first = []
+    last = []
 
-        if i + radius[i] > right:
-            center = i
-            right = i + radius[i]
+    while left <= right:
+        if left == right:
+            first.append(bits[left])
+            break
 
-        if radius[i] > best_length:
-            best_length = radius[i]
-            best_center = i
+        if bits[left] == bits[right]:
+            first.append(bits[left])
+            last.append(bits[right])
+            left += 1
+            right -= 1
+        elif dp[left + 1][right] >= dp[left][right - 1]:
+            left += 1
+        else:
+            right -= 1
 
-    start = (best_center - best_length) // 2
-    return bits[start:start + best_length]
-
+    return "".join(first + last[::-1])
 
 def generate_data(mode="random", length=16, zero_count=8):
     """Generate data and return it with its longest palindrome."""

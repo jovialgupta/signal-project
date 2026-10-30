@@ -1,6 +1,8 @@
 import numpy as np
 from decoders.image_decoder import decode_waveform_image
 from decoders.image_decoder import plot_waveform_for_image_decode
+from decoders.b8zs_decoder import b8zs_decode
+from decoders.hdb3_decoder import hdb3_decode
 
 from data_generator import generate_data, longest_palindrome
 
@@ -149,8 +151,8 @@ def choose_line_encoder():
             differential_manchester_decode,
         ),
         "5": ("AMI", ami_encode, ami_decode),
-        "6": ("B8ZS", b8zs_encode, None),
-        "7": ("HDB3", hdb3_encode, None),
+        "6": ("B8ZS", b8zs_encode,b8zs_decoder),
+        "7": ("HDB3", hdb3_encode,hdb3_decoder ),
     }
 
     return encoders[choice]

@@ -3,10 +3,8 @@ def manchester_encode(bits):
 
     for bit in bits:
         if bit == '1':
-            signal.extend([1, -1])
-        elif bit == '0':
-            signal.extend([-1, 1])
+            signal.extend([1, -1])  # High to Low
         else:
-            raise ValueError("Bits must contain only 0 and 1")
+            signal.extend([-1, 1])  # Low to High
 
     return signal

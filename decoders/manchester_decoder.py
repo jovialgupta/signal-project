@@ -1,20 +1,17 @@
 
 def manchester_decode(signal):
-    """Decode Manchester pairs: [1,-1] means 1; [-1,1] means 0."""
-    if len(signal) % 2 != 0:
-        raise ValueError("Manchester signal must contain an even number of levels")
-
     bits = ""
 
     for i in range(0, len(signal), 2):
-        pair = signal[i:i + 2]
+        first = signal[i]
+        second = signal[i + 1]
 
-        if pair == [1, -1]:
-            bits += "1"
-        elif pair == [-1, 1]:
-            bits += "0"
+        if first == 1 and second == -1:
+            bits += '1'
+        elif first == -1 and second == 1:
+            bits += '0'
         else:
-            raise ValueError("Invalid Manchester signal pair")
+            raise ValueError("Invalid Manchester signal")
 
     return bits
 
