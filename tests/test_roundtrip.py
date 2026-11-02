@@ -9,7 +9,11 @@ import numpy as np
 
 from analog.dm import dm_encode
 from analog.pcm import pcm_encode
-from data_generator import (\n    generate_bits_with_zero_run,\n    longest_palindrome,\n    longest_palindromic_subsequence,\n)
+from data_generator import (
+    generate_bits_with_zero_run,
+    longest_palindrome,
+    longest_palindromic_subsequence,
+)
 from decoders.ami_decoder import ami_decode
 from decoders.b8zs_decoder import b8zs_decode
 from decoders.delta_decoder import dm_decode
