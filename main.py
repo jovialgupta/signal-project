@@ -1,6 +1,10 @@
 import numpy as np
 
-from data_generator import (\n    generate_data,\n    longest_palindrome,\n    longest_palindromic_subsequence,\n)
+from data_generator import (
+    generate_data,
+    longest_palindrome,
+    longest_palindromic_subsequence,
+)
 from decoders.image_decoder import (
     decode_waveform_image,
     plot_waveform_for_image_decode,
