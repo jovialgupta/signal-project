@@ -10,14 +10,14 @@ A Python implementation of digital data generation, line coding, AMI scrambling,
 - AMI options: no scrambling, B8ZS, or HDB3.
 - Analog input: PCM or Delta Modulation, including corresponding decoding. The DM decoder produces the reconstructed staircase.
 - Optionally pass PCM/DM output bits to a line-coding scheme.
-- Extra credit: decode the selected line code from a saved waveform PNG by examining image pixels rather than reading the original encoded values.
-- Automated regression tests for line-code round trips, image decoding, PCM, DM, and palindrome output.
+- Extra credit: decode the selected line code from a saved waveform PNG using OpenCV pixel analysis rather than reading the original encoded values.
+- Automated regression tests cover line-code round trips, image-based decoding, PCM, DM, and palindrome output.
 
 ## Requirements
 Python 3 and the packages listed in requirements.txt:
 - NumPy
 - Matplotlib
-- Pillow
+- OpenCV (opencv-python)
 
 Install dependencies:
 
