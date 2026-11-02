@@ -1,10 +1,10 @@
 def manchester_encode(bits):
-    signal = []
-
-    for bit in bits:
-        if bit == '1':
-            signal.extend([1, -1])  # High to Low
-        else:
-            signal.extend([-1, 1])  # Low to High
-
-    return signal
+    """Encode each bit as two half-bit levels."""
+    levels = {
+        "0": (-1, 1),
+        "1": (1, -1),
+    }
+    try:
+        return [level for bit in bits for level in levels[bit]]
+    except KeyError as error:
+        raise ValueError("Bits must contain only 0 and 1.") from error
