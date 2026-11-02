@@ -9,7 +9,7 @@ import numpy as np
 
 from analog.dm import dm_encode
 from analog.pcm import pcm_encode
-from data_generator import generate_bits_with_zero_run, longest_palindrome
+from data_generator import (\n    generate_bits_with_zero_run,\n    longest_palindrome,\n    longest_palindromic_subsequence,\n)
 from decoders.ami_decoder import ami_decode
 from decoders.b8zs_decoder import b8zs_decode
 from decoders.delta_decoder import dm_decode
@@ -126,9 +126,10 @@ class DataGeneratorTests(unittest.TestCase):
 
     def test_longest_palindromic_subsequence(self):
         self.assertEqual(longest_palindrome("01010"), "01010")
-        result = longest_palindrome("100101")
-        self.assertEqual(result, result[::-1])
-        self.assertTrue(all(character in "01" for character in result))
+        self.assertEqual(longest_palindrome("100101"), "010")
+        subsequence = longest_palindromic_subsequence("100101")
+        self.assertEqual(subsequence, "10101")
+        self.assertEqual(subsequence, subsequence[::-1])
 
 
 if __name__ == "__main__":
