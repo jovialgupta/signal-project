@@ -1,6 +1,6 @@
 import numpy as np
 
-from data_generator import generate_data, longest_palindrome
+from data_generator import (\n    generate_data,\n    longest_palindrome,\n    longest_palindromic_subsequence,\n)
 from decoders.image_decoder import (
     decode_waveform_image,
     plot_waveform_for_image_decode,
@@ -123,9 +123,11 @@ def choose_digital_data():
             bits, _ = generate_data(mode, length, zero_count or 8)
 
     palindrome = longest_palindrome(bits)
+    subsequence = longest_palindromic_subsequence(bits)
     print("\nGenerated digital data:", bits)
-    print("Longest palindrome:", palindrome)
-    print("Palindrome length:", len(palindrome))
+    print("Longest contiguous palindrome (O(n)):", palindrome)
+    print("Contiguous palindrome length:", len(palindrome))
+    print("Longest palindromic subsequence (O(n^2)):", subsequence)
     return bits
 
 
