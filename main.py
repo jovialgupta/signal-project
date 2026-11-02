@@ -1,10 +1,20 @@
 import numpy as np
-from decoders.image_decoder import decode_waveform_image
-from decoders.image_decoder import plot_waveform_for_image_decode
-from decoders.b8zs_decoder import b8zs_decode
-from decoders.hdb3_decoder import hdb3_decode
 
 from data_generator import generate_data, longest_palindrome
+from decoders.image_decoder import (
+    decode_waveform_image,
+    plot_waveform_for_image_decode,
+)
+from decoders.b8zs_decoder import b8zs_decode
+from decoders.hdb3_decoder import hdb3_decode
+from decoders.nrz_decoder import nrz_l_decode, nrz_i_decode
+from decoders.manchester_decoder import (
+    manchester_decode,
+    differential_manchester_decode,
+)
+from decoders.ami_decoder import ami_decode
+from decoders.pcm_decoder import pcm_decode
+from decoders.delta_decoder import dm_decode
 
 from encoders.nrz.nrz_l import nrz_l_encode
 from encoders.nrz.nrz_i import nrz_i_encode
@@ -15,15 +25,6 @@ from encoders.manchester.differential_manchester import (
 from encoders.ami import ami_encode
 from encoders.b8zs import b8zs_encode
 from encoders.hdb3 import hdb3_encode
-
-from decoders.nrz_decoder import nrz_l_decode, nrz_i_decode
-from decoders.manchester_decoder import (
-    manchester_decode,
-    differential_manchester_decode,
-)
-from decoders.ami_decoder import ami_decode
-from decoders.pcm_decoder import pcm_decode
-from decoders.delta_decoder import dm_decode
 
 from analog.pcm import pcm_encode
 from analog.dm import dm_encode
@@ -95,6 +96,7 @@ def get_samples():
 
 
 def choose_digital_data():
+    """Get digital input from the generator or directly from the user."""
     print("\n--- Digital Data Generator ---")
     print("1. Generate random bits")
     print("2. Generate bits containing 4 consecutive zeros")
@@ -107,20 +109,18 @@ def choose_digital_data():
         bits = get_bits()
     else:
         length = get_integer("Sequence length", 16)
+        generation_options = {
+            "1": ("random", None),
+            "2": ("zeros", 4),
+            "3": ("zeros", 8),
+        }
+        mode, zero_count = generation_options[choice]
 
-        if choice == "1":
-            bits, _ = generate_data("random", length)
+        if zero_count is not None and length < zero_count:
+            print(f"Length must be at least {zero_count}.")
+            bits = get_bits()
         else:
-            zero_count = 4 if choice == "2" else 8
-
-            if length < zero_count:
-                print(
-                    f"Length must be at least {zero_count}. "
-                    "Using manual input instead."
-                )
-                bits = get_bits()
-            else:
-                bits, _ = generate_data("zeros", length, zero_count)
+            bits, _ = generate_data(mode, length, zero_count or 8)
 
     palindrome = longest_palindrome(bits)
     print("\nGenerated digital data:", bits)
@@ -130,16 +130,15 @@ def choose_digital_data():
 
 
 def choose_line_encoder():
+    """Return the selected scheme name, encoder, and matching decoder."""
     print("\n--- Line Coding ---")
     print("1. NRZ-L")
     print("2. NRZ-I")
     print("3. Manchester")
     print("4. Differential Manchester")
     print("5. AMI")
-    print("6. B8ZS")
-    print("7. HDB3")
 
-    choice = get_choice("Choose encoder (1-7): ", set("1234567"))
+    choice = get_choice("Choose encoder (1-5): ", set("12345"))
 
     encoders = {
         "1": ("NRZ-L", nrz_l_encode, nrz_l_decode),
@@ -150,61 +149,46 @@ def choose_line_encoder():
             differential_manchester_encode,
             differential_manchester_decode,
         ),
-        "5": ("AMI", ami_encode, ami_decode),
-        "6": ("B8ZS", b8zs_encode,b8zs_decode),
-        "7": ("HDB3", hdb3_encode,hdb3_decode ),
     }
 
-    return encoders[choice]
+    if choice in encoders:
+        return encoders[choice]
+
+    scramble = get_choice(
+        "Do you want AMI scrambling? (y/n): ",
+        {"y", "n"},
+    )
+
+    scrambling_options = {
+        "1": ("B8ZS", b8zs_encode, b8zs_decode),
+        "2": ("HDB3", hdb3_encode, hdb3_decode),
+    }
+
+    if scramble == "n":
+        return "AMI", ami_encode, ami_decode
+
+    print("\nChoose scrambling scheme:")
+    print("1. B8ZS")
+    print("2. HDB3")
+    scheme = get_choice("Choose (1-2): ", {"1", "2"})
+    return scrambling_options[scheme]
 
 
 def run_line_coding(bits):
-    name = get_choice(
-        "Choose line encoding (nrz_l/nrz_i/manchester/diff_manchester/ami/b8zs/hdb3): ",
-        {
-            "nrz_l",
-            "nrz_i",
-            "manchester",
-            "diff_manchester",
-            "ami",
-            "b8zs",
-            "hdb3",
-        },
-    )
-
-    # Select the encoder and its matching decoder
-    encoders = {
-        "nrz_l": (nrz_l_encode, nrz_l_decode),
-        "nrz_i": (nrz_i_encode, nrz_i_decode),
-        "manchester": (manchester_encode, manchester_decode),
-        "diff_manchester": (
-            differential_manchester_encode,
-            differential_manchester_decode,
-        ),
-        "ami": (ami_encode, ami_decode),
-        "b8zs": (b8zs_encode, None),
-        "hdb3": (hdb3_encode, None),
-    }
-
-    encoder, decoder = encoders[name]
-
-    # Encode the original bit sequence
+    """Encode bits, then optionally decode the waveform image."""
+    name, encoder, decoder = choose_line_encoder()
     encoded = encoder(bits)
 
-    print("\nOriginal bits:", bits)
+    print("\nSelected scheme:", name)
+    print("Original bits:", bits)
     print("Encoded signal:", encoded)
 
-    # Ask whether to decode the waveform image
     decode = get_choice(
         "Decode the signal from its waveform image? (y/n): ",
         {"y", "n"},
     )
 
     if decode == "n":
-        return
-
-    if decoder is None:
-        print(f"No decoder is available for {name}.")
         return
 
     try:
@@ -214,22 +198,21 @@ def run_line_coding(bits):
         )
         print("Waveform image saved:", image_path)
 
+        # The decoder reads pixel positions from the saved image.
+        # It does not receive the original encoded list.
         recovered_signal = decode_waveform_image(
             image_path,
             expected_levels=len(encoded),
         )
-
         decoded = decoder(recovered_signal)
 
-        print("Signal recovered from image:", recovered_signal)
+        print("\nSignal recovered from image:", recovered_signal)
         print("Decoded bits:", decoded)
         print("Original bits:", bits)
         print("Match:", decoded == bits)
 
     except (ValueError, TypeError, OSError) as error:
         print("Image decoding error:", error)
-
-
 
 
 def run_pcm():
@@ -250,7 +233,6 @@ def run_pcm():
     )
 
     decode = get_choice("Decode the PCM bitstream? (y/n): ", {"y", "n"})
-
     if decode == "y":
         reconstructed = pcm_decode(
             bitstream,
@@ -265,10 +247,11 @@ def run_pcm():
             "Original vs Reconstructed PCM",
         )
 
-    if get_choice(
+    pass_to_line_coding = get_choice(
         "Pass PCM bits to line coding? (y/n): ",
         {"y", "n"},
-    ) == "y":
+    )
+    if pass_to_line_coding == "y":
         run_line_coding(bitstream)
 
 
@@ -295,7 +278,6 @@ def run_dm():
     )
 
     decode = get_choice("Decode the DM bitstream? (y/n): ", {"y", "n"})
-
     if decode == "y":
         reconstructed = dm_decode(
             bitstream,
@@ -309,16 +291,28 @@ def run_dm():
             "Encoder Staircase vs Decoded Staircase",
         )
 
-    if bitstream and get_choice(
-        "Pass DM bits to line coding? (y/n): ",
-        {"y", "n"},
-    ) == "y":
-        run_line_coding(bitstream)
-    elif not bitstream:
-        print("No DM bits were generated; skipping line coding.")
+    if bitstream:
+        pass_to_line_coding = get_choice(
+            "Pass DM bits to line coding? (y/n): ",
+            {"y", "n"},
+        )
+        if pass_to_line_coding == "y":
+            run_line_coding(bitstream)
+
+
+def close_program():
+    print("Program closed. Goodbye!")
+    return False
 
 
 def main():
+    actions = {
+        "0": close_program,
+        "1": lambda: run_line_coding(choose_digital_data()),
+        "2": run_pcm,
+        "3": run_dm,
+    }
+
     while True:
         print("\n======================================")
         print(" DIGITAL SIGNAL ENCODER / DECODER")
@@ -333,18 +327,9 @@ def main():
             {"0", "1", "2", "3"},
         )
 
-        if choice == "0":
-            print("Program closed. Goodbye!")
-            break
-
         try:
-            if choice == "1":
-                bits = choose_digital_data()
-                run_line_coding(bits)
-            elif choice == "2":
-                run_pcm()
-            elif choice == "3":
-                run_dm()
+            if actions[choice]() is False:
+                break
         except (ValueError, TypeError, IndexError) as error:
             print("\nInput or processing error:", error)
         except Exception as error:
