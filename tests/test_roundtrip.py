@@ -130,7 +130,7 @@ class DataGeneratorTests(unittest.TestCase):
 
     def test_longest_palindromic_subsequence(self):
         self.assertEqual(longest_palindrome("01010"), "01010")
-        self.assertEqual(longest_palindrome("100101"), "010")
+        self.assertEqual(longest_palindrome("100101"), "1001")
         subsequence = longest_palindromic_subsequence("100101")
         self.assertEqual(subsequence, "10101")
         self.assertEqual(subsequence, subsequence[::-1])
