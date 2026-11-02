@@ -1,10 +1,7 @@
 def nrz_l_encode(bits):
-    signal = []
-
-    for bit in bits:
-        if bit == '1':
-            signal.append(1)
-        else:
-            signal.append(-1)
-
-    return signal
+    """Encode 1 as +1 and 0 as -1 using NRZ-L."""
+    levels = {"0": -1, "1": 1}
+    try:
+        return [levels[bit] for bit in bits]
+    except KeyError as error:
+        raise ValueError("Bits must contain only 0 and 1.") from error
