@@ -1,25 +1,42 @@
+from pathlib import Path
+import re
 
 import numpy as np
 import matplotlib.pyplot as plt
 
 
 def plot_digital_signal(signal, title="Digital Signal"):
-    """Plot encoded digital signal levels."""
-    signal = np.asarray(signal)
+    """Plot and save the encoded digital waveform."""
+    signal = np.asarray(signal, dtype=float).ravel()
 
-    plt.figure(figsize=(10, 4))
-    plt.step(
-        np.arange(len(signal)),
-        signal,
-        where="post",
-        linewidth=1.8,
-    )
-    plt.title(title)
-    plt.xlabel("Bit / sample position")
-    plt.ylabel("Signal level")
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
+    if signal.size == 0:
+        raise ValueError("Cannot plot an empty encoded signal.")
+
+    # Extend the final level so the last bit/half-bit is visible.
+    x = np.arange(signal.size + 1)
+    y = np.append(signal, signal[-1])
+
+    fig, ax = plt.subplots(figsize=(11, 4))
+    ax.step(x, y, where="post", linewidth=2)
+    ax.set_title(title)
+    ax.set_xlabel("Bit position (half-bit position for Manchester schemes)")
+    ax.set_ylabel("Signal level")
+    ax.set_xticks(np.arange(signal.size + 1))
+    ax.set_yticks(sorted(set(signal.tolist())))
+    ax.grid(True, alpha=0.35)
+    ax.set_xlim(0, signal.size)
+    fig.tight_layout()
+
+    # Save a separate image for every scheme instead of overwriting one file.
+    output_dir = Path("waveforms")
+    output_dir.mkdir(exist_ok=True)
+    safe_title = re.sub(r"[^A-Za-z0-9_-]+", "_", title).strip("_")
+    image_path = output_dir / f"{safe_title}.png"
+    fig.savefig(image_path, dpi=150, bbox_inches="tight")
+    print(f"Waveform image saved: {image_path.resolve()}")
+
     plt.show()
+    plt.close(fig)
 
 
 def plot_analog_signal(time, signal, title="Analog Signal"):
