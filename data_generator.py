@@ -151,7 +151,7 @@ def generate_data(mode="random", length=16, zero_count=8):
 
 
 if __name__ == "__main__":
-    print("\\n--- Digital Data Generator ---")
+    print("\n--- Digital Data Generator ---")
     print("1. Random binary sequence")
     print("2. Sequence containing four consecutive zeros")
     print("3. Sequence containing eight consecutive zeros")
@@ -168,7 +168,7 @@ if __name__ == "__main__":
         bits, palindrome = generate_data(mode, length, zero_count)
         subsequence = longest_palindromic_subsequence(bits)
 
-        print("\\nGenerated bits:", bits)
+        print("\nGenerated bits:", bits)
         print("Longest contiguous palindrome:", palindrome)
         print("Longest palindromic subsequence:", subsequence)
     except (KeyError, ValueError) as error:
