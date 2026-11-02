@@ -182,6 +182,7 @@ def run_line_coding(bits):
     print("\nSelected scheme:", name)
     print("Original bits:", bits)
     print("Encoded signal:", encoded)
+    plot_digital_signal(encoded, f"{name} Encoded Waveform")
 
     decode = get_choice(
         "Decode the signal from its waveform image? (y/n): ",
