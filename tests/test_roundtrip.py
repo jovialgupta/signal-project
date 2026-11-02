@@ -94,6 +94,43 @@ class ImageDecoderTests(unittest.TestCase):
                 )
                 self.assertEqual(recovered, signal)
 
+    def test_image_round_trip_for_all_seven_line_codes(self):
+        schemes = (
+            (nrz_l_encode, nrz_l_decode),
+            (nrz_i_encode, nrz_i_decode),
+            (manchester_encode, manchester_decode),
+            (
+                differential_manchester_encode,
+                differential_manchester_decode,
+            ),
+            (ami_encode, ami_decode),
+            (b8zs_encode, b8zs_decode),
+            (hdb3_encode, hdb3_decode),
+        )
+        bits = "100000000010000010101"
+
+        with tempfile.TemporaryDirectory() as directory:
+            for index, (encoder, decoder) in enumerate(schemes):
+                with self.subTest(encoder=encoder.__name__):
+                    encoded = encoder(bits)
+                    image_path = Path(directory) / f"scheme_{index}.png"
+                    plot_waveform_for_image_decode(
+                        encoded,
+                        str(image_path),
+                    )
+                    recovered_levels = decode_waveform_image(
+                        str(image_path),
+                        expected_levels=len(encoded),
+                    )
+                    self.assertEqual(recovered_levels, encoded)
+                    self.assertEqual(decoder(recovered_levels), bits)
+
+    def test_image_decoder_rejects_missing_or_invalid_image(self):
+        with self.assertRaises(ValueError):
+            decode_waveform_image("missing_waveform.png", 4)
+        with self.assertRaises(ValueError):
+            decode_waveform_image("missing_waveform.png", 0)
+
 
 class AnalogModulationTests(unittest.TestCase):
     def test_pcm_encoder_decoder(self):
