@@ -1,174 +1,71 @@
-\# Digital Signal Encoder and Decoder
+# Digital Signal Encoder and Decoder
 
+## Project overview
+A Python implementation of digital data generation, line coding, AMI scrambling, PCM, Delta Modulation, and waveform-based decoding.
 
+## Features
+- Generate random binary data, data containing four or eight consecutive zeros, or enter a binary stream manually.
+- Find the longest contiguous palindromic substring with Manacher's algorithm (O(n)); also report the longest palindromic subsequence (O(n²)) to cover the alternate interpretation of the assignment wording.
+- Line coding: NRZ-L, NRZ-I, Manchester, Differential Manchester, and AMI.
+- AMI options: no scrambling, B8ZS, or HDB3.
+- Analog input: PCM or Delta Modulation, including corresponding decoding. The DM decoder produces the reconstructed staircase.
+- Optionally pass PCM/DM output bits to a line-coding scheme.
+- Extra credit: decode the selected line code from a saved waveform PNG using OpenCV pixel analysis rather than reading the original encoded values.
+- Automated regression tests cover line-code round trips, image-based decoding, PCM, DM, and palindrome output.
 
-\## Project Overview
+## Requirements
+Python 3 and the packages listed in requirements.txt:
+- NumPy
+- Matplotlib
+- OpenCV (opencv-python)
 
+Install dependencies:
 
-
-This project implements digital line encoding, decoding, and analog-to-digital signal techniques using Python. It also provides graphical visualization of signals.
-
-
-
-\## Features
-
-
-
-\### Digital Line Encoding
-
-\- NRZ-L (Non-Return-to-Zero Level)
-
-\- NRZ-I (Non-Return-to-Zero Invert)
-
-\- Manchester Encoding
-
-\- Differential Manchester Encoding
-
-\- Alternate Mark Inversion (AMI)
-
-\- Bipolar with 8-Zero Substitution (B8ZS)
-
-\- High-Density Bipolar 3 Zeros (HDB3)
-
-
-
-\### Decoding
-
-\- NRZ-L decoding
-
-\- NRZ-I decoding
-
-\- Manchester decoding
-
-\- Differential Manchester decoding
-
-\- AMI decoding
-
-
-
-\### Analog Signal Techniques
-
-\- Pulse Code Modulation (PCM)
-
-\- Delta Modulation (DM)
-
-
-
-\### Visualization
-
-\- Graphical signal waveforms using Matplotlib
-
-
-
-\## Technologies Used
-
-\- Python
-
-\- NumPy
-
-\- Matplotlib
-
-
-
-\## Installation
-
-
-
-Install the required packages:
-
-
-
-```bash
-
+~~~bash
 python -m pip install -r requirements.txt
+~~~
 
-```
+## Run
 
-
-
-\## How to Run
-
-
-
-Run the main program from the project directory:
-
-
-
-```bash
-
+~~~bash
 python main.py
+~~~
 
-```
+## Run tests
 
+~~~bash
+python -m unittest discover -s tests
+~~~
 
+## Project structure
 
-Choose an option from the menu and follow the prompts.
-
-
-
-\## Example
-
-
-
-For NRZ-L, enter option `1` and the bit sequence `10110`.
-
-
-
-The program displays the encoded signal and decoded bit sequence.
-
-
-
-\## Project Structure
-
-
-
-```text
-
+~~~text
 signal-project/
-
 ├── main.py
-
+├── data_generator.py
 ├── plotting.py
-
 ├── requirements.txt
-
-├── README.md
-
+├── SPECIFICATION.md
 ├── encoders/
-
 │   ├── nrz/
-
 │   ├── manchester/
-
 │   ├── ami.py
-
 │   ├── b8zs.py
-
 │   └── hdb3.py
-
 ├── decoders/
+│   ├── image_decoder.py
+│   ├── nrz_decoder.py
+│   ├── manchester_decoder.py
+│   ├── ami_decoder.py
+│   ├── b8zs_decoder.py
+│   ├── hdb3_decoder.py
+│   ├── pcm_decoder.py
+│   └── delta_decoder.py
+├── analog/
+│   ├── pcm.py
+│   └── dm.py
+└── tests/
+    └── test_roundtrip.py
+~~~
 
-│   ├── nrz\_decoder.py
-
-│   ├── manchester\_decoder.py
-
-│   └── ami\_decoder.py
-
-└── analog/
-
-&#x20;   ├── pcm.py
-
-&#x20;   └── dm.py
-
-```
-
-
-
-\## Team Project
-
-
-
-This project demonstrates digital signal encoding and decoding, PCM, Delta Modulation, and signal visualization.
-
-
-
+See SPECIFICATION.md for algorithm conventions, assumptions, complexity, and acknowledgement.
